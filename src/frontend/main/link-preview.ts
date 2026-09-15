@@ -275,8 +275,7 @@ export class FilePreviewPopover
 		const viewportHeight = window.innerHeight;
 
 		// Reset any previously set positioning
-		this.filePreviewPopover.style.top = '';
-		this.filePreviewPopover.style.left = '';
+		Object.assign(this.filePreviewPopover.style, { top: '', left: '' });
 
 		const margin = 10; // Margin between link and preview
 

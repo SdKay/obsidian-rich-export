@@ -1,6 +1,7 @@
 import { MarkdownRendererAPI } from "src/plugin/render-api/render-api";
 import { Path } from "src/plugin/utils/path";
 import { FeatureGenerator } from "src/plugin/features/feature-generator";
+import { Utils } from "src/plugin/utils/utils";
 
 export class Tree implements FeatureGenerator
 {
@@ -63,7 +64,7 @@ export class Tree implements FeatureGenerator
 			{
 				const collapseAllEl = header.createEl('button', { cls: "clickable-icon nav-action-button tree-collapse-all" });
 					collapseAllEl.setAttribute("aria-label", "Collapse All");
-					collapseAllEl.innerHTML = "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'></svg>";
+					collapseAllEl.appendChild(Utils.parseHTMLFragment("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'></svg>"));
 					if (this.generateWithItemsClosed) collapseAllEl.classList.add("is-collapsed");
 			}
 		}
@@ -152,7 +153,7 @@ export class TreeItem
 			this.itemEl.classList.add("is-collapsed");
 			this.collapseIcon?.classList.add("is-collapsed");
 			if(animate) this.slideUp(childrenEl, 100);
-			else childrenEl.style.display = "none";
+			else childrenEl.setCssStyles({ display: "none" });
 		}
 		else
 		{
@@ -202,15 +203,19 @@ export class TreeItem
 		else itemContentsEl.innerText = this.title;
 
 		// remove a tags from the title
-		itemContentsEl.querySelectorAll("a").forEach((a) => 
+		itemContentsEl.querySelectorAll("a").forEach((a) =>
 		{
 			const span = a.ownerDocument.createElement("span");
-			span.innerHTML = a.innerHTML;
+			span.append(...Array.from(a.childNodes));
 			a.replaceWith(span);
 		});
 
 		// remove new lines from the title
-		itemContentsEl.innerHTML = itemContentsEl.innerHTML.replace(/\n/g, "");
+		const titleTextWalker = document.createTreeWalker(itemContentsEl, NodeFilter.SHOW_TEXT, null);
+		let titleTextNode: Node | null;
+		while (titleTextNode = titleTextWalker.nextNode()) {
+			titleTextNode.textContent = titleTextNode.textContent?.replace(/\n/g, "") ?? "";
+		}
 
 		return itemContentsEl;
 	}
@@ -243,7 +248,7 @@ export class TreeItem
 
 		this.collapseIcon = container.createDiv("tree-item-icon collapse-icon");
 		if (this.isCollapsed) this.collapseIcon.classList.add("is-collapsed");
-		this.collapseIcon.innerHTML = arrowIcon;
+		this.collapseIcon.appendChild(Utils.parseHTMLFragment(arrowIcon));
 		return this.collapseIcon;
 	}
 
@@ -267,19 +272,23 @@ export class TreeItem
 
 	protected slideUp(target: HTMLElement, duration=500)
 	{
-		target.style.transitionProperty = 'height, margin, padding';
-		target.style.transitionDuration = duration + 'ms';
-		target.style.boxSizing = 'border-box';
-		target.style.height = target.offsetHeight + 'px';
+		target.setCssStyles({
+			transitionProperty: 'height, margin, padding',
+			transitionDuration: duration + 'ms',
+			boxSizing: 'border-box',
+			height: target.offsetHeight + 'px',
+		});
 		target.offsetHeight;
-		target.style.overflow = 'hidden';
-		target.style.height = "0";
-		target.style.paddingTop = "0";
-		target.style.paddingBottom = "0";
-		target.style.marginTop = "0";
-		target.style.marginBottom = "0";
+		target.setCssStyles({
+			overflow: 'hidden',
+			height: '0',
+			paddingTop: '0',
+			paddingBottom: '0',
+			marginTop: '0',
+			marginBottom: '0',
+		});
 		window.setTimeout(async () => {
-				target.style.display = 'none';
+				target.setCssStyles({ display: 'none' });
 				target.style.removeProperty('height');
 				target.style.removeProperty('padding-top');
 				target.style.removeProperty('padding-bottom');
@@ -296,19 +305,23 @@ export class TreeItem
 		target.style.removeProperty('display');
 		let display = window.getComputedStyle(target).display;
 		if (display === 'none') display = 'block';
-		target.style.display = display;
+		target.setCssStyles({ display });
 		const height = target.offsetHeight;
-		target.style.overflow = 'hidden';
-		target.style.height = "0";
-		target.style.paddingTop = "0";
-		target.style.paddingBottom = "0";
-		target.style.marginTop = "0";
-		target.style.marginBottom = "0";
+		target.setCssStyles({
+			overflow: 'hidden',
+			height: '0',
+			paddingTop: '0',
+			paddingBottom: '0',
+			marginTop: '0',
+			marginBottom: '0',
+		});
 		target.offsetHeight;
-		target.style.boxSizing = 'border-box';
-		target.style.transitionProperty = "height, margin, padding";
-		target.style.transitionDuration = duration + 'ms';
-		target.style.height = height + 'px';
+		target.setCssStyles({
+			boxSizing: 'border-box',
+			transitionProperty: 'height, margin, padding',
+			transitionDuration: duration + 'ms',
+			height: height + 'px',
+		});
 		target.style.removeProperty('padding-top');
 		target.style.removeProperty('padding-bottom');
 		target.style.removeProperty('margin-top');

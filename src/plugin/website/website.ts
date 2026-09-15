@@ -64,7 +64,7 @@ export class Website
 		if (this.exportOptions.fileNavigationOptions.enabled)
 		{
 			const fileTreeElContainer = document.body.createDiv();
-			fileTreeElContainer.innerHTML = this.fileTreeAsset.getHTML(this.exportOptions);
+			fileTreeElContainer.appendChild(Utils.parseHTMLFragment(this.fileTreeAsset.getHTML(this.exportOptions)));
 			const fileTreeEl = fileTreeElContainer.firstElementChild as HTMLElement;
 
 			template.insertFeature(fileTreeEl, this.exportOptions.fileNavigationOptions);
@@ -507,7 +507,7 @@ export class Website
 		let html = new DOMParser().parseFromString(index.data as string, "text/html");
 
 		// insert head references
-		html.head.innerHTML += AssetHandler.getHeadReferences(this.exportOptions);
+		html.head.appendChild(Utils.parseHTMLFragment(AssetHandler.getHeadReferences(this.exportOptions)));
 
 		// define metadata
 		let metadataScript = html.head.createEl("data");

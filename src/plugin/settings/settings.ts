@@ -151,35 +151,23 @@ export class SettingsPage extends PluginSettingTab
 		container.empty();
 		container.classList.add('webpage-html-settings');
 
-		const header = container.createEl('h2', { text: lang.title });
-		header.style.display = 'block';
-		header.style.marginBottom = '15px';
+		new Setting(container).setName(lang.title).setHeading().settingEl.addClass('webpage-html-export-settings-heading');
 
-		const supportContainer = container.createDiv();
-		supportContainer.style.marginBottom = '15px';
-		const supportLink = container.createEl('a');
+		const supportContainer = container.createDiv({ cls: 'webpage-html-export-support-container' });
+		const supportLink = container.createEl('a', { cls: 'webpage-html-export-support-link' });
 		// @ts-ignore
 		supportLink.href = `https://paypal.me/ssdking`;
-		supportLink.style.height = "40px"
-		supportLink.innerHTML = `<img style="height:40px;" src="https://img.shields.io/badge/Donate-PayPal-003087?style=for-the-badge&logo=paypal&logoColor=white">`;
-		const supportHeader = container.createDiv({ text: lang.support, cls: "setting-item-description" });
-		supportHeader.style.display = 'block';
+		const supportBadge = supportLink.createEl('img', { cls: 'webpage-html-export-support-badge' });
+		supportBadge.src = "https://img.shields.io/badge/Donate-PayPal-003087?style=for-the-badge&logo=paypal&logoColor=white";
+		const supportHeader = container.createDiv({ text: lang.support, cls: "setting-item-description webpage-html-export-support-block" });
 
-		supportContainer.style.display = 'grid';
-		supportContainer.style.gridTemplateColumns = "0.5fr 0.5fr";
-		supportContainer.style.gridTemplateRows = "40px 20px";
-		supportContainer.appendChild(supportLink); 
+		supportContainer.appendChild(supportLink);
 
 		// debug info button
-		const debugInfoButton = container.createEl('button');
+		const debugInfoButton = container.createEl('button', { cls: 'webpage-html-export-debug-button' });
 		const bugIcon = getIcon('bug');
 		if (bugIcon) debugInfoButton.appendChild(bugIcon);
-		debugInfoButton.style.height = '100%';
-		debugInfoButton.style.aspectRatio = '1/1';
-		debugInfoButton.style.justifySelf = 'end';
-		const debugHeader = container.createDiv({ text: lang.debug, cls: "setting-item-description" });
-		debugHeader.style.display = 'block';
-		debugHeader.style.justifySelf = 'end';
+		const debugHeader = container.createDiv({ text: lang.debug, cls: "setting-item-description webpage-html-export-debug-block" });
 		debugInfoButton.addEventListener('click', () => {
 			navigator.clipboard.writeText(ExportLog.getDebugInfo());
 			new Notice("Debug info copied to clipboard!");

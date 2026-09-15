@@ -55,7 +55,7 @@ export const language: i18n =
 	},
 	settings: 
 	{
-		title: "HTML Export Settings",
+		title: "Rich Export Settings",
 		support: "Support the continued development of this plugin.",
 		debug: "Copy debug info to clipboard",
 		unavailableSetting: "⚠️ This feature is not available in {0} mode.",

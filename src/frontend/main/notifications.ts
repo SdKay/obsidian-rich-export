@@ -15,25 +15,24 @@ export class Notice
 		{
 			Notice.container = document.createElement("div");
 			Notice.container.classList.add("notice-container");
-			Notice.container.style.top = "0";
-			Notice.container.style.right = "0";
+			Object.assign(Notice.container.style, { top: "0", right: "0" });
 			document.body.appendChild(Notice.container);
 		}
 
 		this.notification = document.createElement("div");
 		this.notification.classList.add("notice");
-		this.notification.innerHTML = this.message;
+		this.notification.innerText = this.message;
 		Notice.container.appendChild(this.notification);
 
 		// slide in from left
-		this.notification.style.opacity = "0";
-		this.notification.style.transform = "translateX(350px)";
-		this.notification.style.transition = "all 0.5s";
+		Object.assign(this.notification.style, { opacity: "0", transform: "translateX(350px)", transition: "all 0.5s" });
 		setTimeout(() =>
 		{
-			this.notification.style.opacity = "1";
-			this.notification.style.transform = "translateX(0)";
-			this.notification.style.height = this.notification.scrollHeight + "px";
+			Object.assign(this.notification.style, {
+				opacity: "1",
+				transform: "translateX(0)",
+				height: this.notification.scrollHeight + "px",
+			});
 		}, 100);
 
 		// slide up
@@ -52,10 +51,7 @@ export class Notice
 	public dismiss()
 	{
 		if (!this.notification) return;
-		this.notification.style.opacity = "0";
-		this.notification.style.height = "0";
-		this.notification.style.margin = "0";
-		this.notification.style.padding = "0";
+		Object.assign(this.notification.style, { opacity: "0", height: "0", margin: "0", padding: "0" });
 		setTimeout(() =>
 		{
 			this.notification.remove();

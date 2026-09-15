@@ -171,10 +171,9 @@ export class WebpageDocument {
 					.find((h) => h.findByID(this.hash))
 					?.findByID(this.hash);
 				if (header) {
-					this.sizerEl.innerHTML = header
-						.getHeaderWithContentRecursive()
-						.map((e) => e.outerHTML)
-						.join("");
+					this.sizerEl.replaceChildren(
+						...header.getHeaderWithContentRecursive().map((e) => e.cloneNode(true))
+					);
 				}
 			}
 

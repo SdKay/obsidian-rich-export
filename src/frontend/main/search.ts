@@ -35,14 +35,7 @@ export class Search
 
 		this.input.value = query;
 
-		if (type != allSearch)
-		{
-			this.input.style.color = "var(--text-accent)";
-		}
-		else
-		{
-			this.input.style.color = "";
-		}
+		Object.assign(this.input.style, { color: type != allSearch ? "var(--text-accent)" : "" });
 
 		const searchFields: string[] = [];
 		if (type & SearchType.Title) searchFields.push('title');
@@ -247,29 +240,53 @@ export class Search
 		this.clearCurrentDocumentSearch();
 		const textNodes = getTextNodes(ObsidianSite.document.sizerEl ?? ObsidianSite.document.documentEl);
 
+		let queryRegExp: RegExp;
+		try
+		{
+			queryRegExp = new RegExp(query, 'gi');
+		}
+		catch
+		{
+			// invalid regex from user input (e.g. unbalanced parens) — skip highlighting
+			return;
+		}
+
 		textNodes.forEach(async (node) =>
 		{
 			const content = node.nodeValue;
-			const newContent = content?.replace(new RegExp(query, 'gi'), match => `<mark>${match}</mark>`);
+			if (!content) return;
 
-			if (newContent && newContent !== content) 
+			queryRegExp.lastIndex = 0;
+			if (!queryRegExp.test(content)) return;
+			queryRegExp.lastIndex = 0;
+
+			const newNodes: Node[] = [];
+			let lastIndex = 0;
+			let match: RegExpExecArray | null;
+			while ((match = queryRegExp.exec(content)) !== null)
 			{
-				const tempDiv = document.createElement('div');
-				tempDiv.innerHTML = newContent;
-		
-				const newNodes = Array.from(tempDiv.childNodes);
-		
-				newNodes.forEach(newNode => 
+				if (match.index > lastIndex)
 				{
-					if (newNode.nodeType != Node.TEXT_NODE)
-					{
-						(newNode as Element)?.setAttribute('class', 'search-mark');
-					}
-					node?.parentNode?.insertBefore(newNode, node);
-				});
-		
-				node?.parentNode?.removeChild(node);
+					newNodes.push(document.createTextNode(content.slice(lastIndex, match.index)));
+				}
+				const mark = document.createElement('mark');
+				mark.setAttribute('class', 'search-mark');
+				mark.textContent = match[0];
+				newNodes.push(mark);
+				lastIndex = match.index + match[0].length;
+				if (match[0].length === 0) queryRegExp.lastIndex++; // avoid infinite loop on empty matches
 			}
+			if (lastIndex < content.length)
+			{
+				newNodes.push(document.createTextNode(content.slice(lastIndex)));
+			}
+
+			newNodes.forEach(newNode =>
+			{
+				node?.parentNode?.insertBefore(newNode, node);
+			});
+
+			node?.parentNode?.removeChild(node);
 		});
 
 		const firstMark = document.querySelector(".search-mark");
@@ -283,9 +300,9 @@ export class Search
 
 	private clearCurrentDocumentSearch()
 	{
-		document.querySelectorAll(".search-mark").forEach(node => 
+		document.querySelectorAll(".search-mark").forEach(node =>
 		{
-			node.outerHTML = node.innerHTML;
+			node.replaceWith(...Array.from(node.childNodes));
 		});
 	}
 }

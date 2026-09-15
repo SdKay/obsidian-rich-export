@@ -167,13 +167,18 @@ button.html-progress-cancel
 
 .html-progress-log
 {
-	display:none; 
-	flex-direction: column; 
-	border-left: 1px solid var(--divider-color); 
-	overflow-y: auto; 
-	width: 300px; 
-	max-width: 300px; 
+	display:none;
+	flex-direction: column;
+	border-left: 1px solid var(--divider-color);
+	overflow-y: auto;
+	width: 300px;
+	max-width: 300px;
 	min-width: 300px;
+}
+
+.html-progress-log.html-progress-log-visible
+{
+	display: flex;
 }
 
 .html-progress-log > h1
@@ -182,6 +187,29 @@ button.html-progress-cancel
 	padding: 0.3em;
 	background-color: rgba(100, 70, 20, 0.1);
 	margin: 0;
+}
+
+.html-progress-log-item
+{
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 2px;
+	font-size: 12px;
+	border-bottom: 1px solid var(--divider-color);
+	border-top: 1px solid var(--divider-color);
+}
+
+.html-progress-log-title
+{
+	font-weight: bold;
+	margin-left: 1em;
+}
+
+.html-progress-log-message
+{
+	margin-left: 2em;
+	font-size: 0.8em;
+	white-space: pre-wrap;
 }
 
 /* File picker */
@@ -316,4 +344,129 @@ details.settings-section > summary > svg
 details.settings-section[open] > summary > svg
 {
 	rotate: 90deg;
+}
+
+.webpage-html-export-update-notice
+{
+	margin-block-start: calc(var(--h3-size)/2);
+	background-color: var(--interactive-normal);
+	padding: 4px 1em;
+	color: var(--color-red);
+	border-radius: 5px;
+	display: block;
+	width: fit-content;
+}
+
+.webpage-html-export-picker-modal
+{
+	position: relative;
+	z-index: 1;
+	width: 25em;
+	padding: 0;
+	margin: 10px;
+	max-height: 80%;
+	box-shadow: 0 0 7px 1px inset #00000060;
+}
+
+.webpage-html-export-picker-scroll-area
+{
+	height: 100%;
+	width: 100%;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 1em;
+	box-shadow: 0 0 7px 1px inset #00000060;
+}
+
+.webpage-html-export-picker-save-setting
+{
+	border: none;
+	margin-right: 1em;
+}
+
+.webpage-html-export-prewrap-desc
+{
+	white-space: pre-wrap;
+}
+
+.webpage-html-export-setting-padded-right
+{
+	padding-right: 1em;
+}
+
+.webpage-html-export-description-margin-bottom
+{
+	margin-bottom: 1em;
+}
+
+.webpage-html-export-settings-heading
+{
+	margin-bottom: 15px;
+}
+
+.webpage-html-export-support-container
+{
+	margin-bottom: 15px;
+	display: grid;
+	grid-template-columns: 0.5fr 0.5fr;
+	grid-template-rows: 40px 20px;
+}
+
+.webpage-html-export-support-link
+{
+	height: 40px;
+}
+
+.webpage-html-export-support-badge
+{
+	height: 40px;
+}
+
+.webpage-html-export-support-block,
+.webpage-html-export-debug-block
+{
+	display: block;
+}
+
+.webpage-html-export-debug-block
+{
+	justify-self: end;
+}
+
+.webpage-html-export-debug-button
+{
+	height: 100%;
+	aspect-ratio: 1/1;
+	justify-self: end;
+}
+
+.webpage-html-export-divider
+{
+	margin-top: 20px;
+	margin-bottom: 20px;
+	border-color: var(--interactive-accent);
+	opacity: 0.5;
+}
+
+.webpage-html-export-error-text
+{
+	color: var(--color-red);
+	margin-bottom: 0.75rem;
+}
+
+.webpage-html-export-hidden
+{
+	display: none;
+}
+
+.webpage-html-export-full-width
+{
+	width: 100%;
+}
+
+.webpage-html-export-invisible-button
+{
+	opacity: 0;
+	pointer-events: none;
+	cursor: default;
 }

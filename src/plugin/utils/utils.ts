@@ -39,7 +39,7 @@ export namespace Utils
 	export function sampleCSSColorHex(variable: string, testParentEl: HTMLElement): { a: number, hex: string }
 	{
 		const testEl = document.createElement('div');
-		testEl.style.setProperty('display', 'none');
+		testEl.setCssStyles({ display: 'none' });
 		testEl.style.setProperty('color', 'var(' + variable + ')');
 		testParentEl.appendChild(testEl);
 
@@ -178,4 +178,14 @@ export namespace Utils
 		}
 		return arr[string2.length][string1.length];
 	  };
+
+	// parses a trusted HTML fragment string (generated internally by the plugin, e.g. icon SVGs)
+	// into real DOM nodes instead of assigning innerHTML directly.
+	export function parseHTMLFragment(html: string): DocumentFragment
+	{
+		const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+		const fragment = document.createDocumentFragment();
+		fragment.append(...Array.from(doc.body.childNodes));
+		return fragment;
+	}
 }

@@ -91,14 +91,14 @@ export abstract class DynamicInsertedFeature<
 	public hide(): void {
 		const featureEl = this.getElement(InsertedFeature.FEATURE_KEY);
 		if (featureEl) {
-			featureEl.style.display = "none";
+			Object.assign(featureEl.style, { display: "none" });
 		}
 	}
 
 	public show(): void {
 		const featureEl = this.getElement(InsertedFeature.FEATURE_KEY);
 		if (featureEl) {
-			featureEl.style.display = "";
+			Object.assign(featureEl.style, { display: "" });
 		}
 	}
 }

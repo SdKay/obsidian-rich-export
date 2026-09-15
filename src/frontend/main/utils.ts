@@ -28,15 +28,22 @@ export function getTextNodes(element: Element)
 	return textNodes;
 }
 
-export function getLengthInPixels(cssString: string, contextElement: Element): number {
+export function getLengthInPixels(cssString: string, contextElement: HTMLElement): number {
 	const tempElement = document.createElement('div');
-	tempElement.style.position = 'absolute';
-	tempElement.style.visibility = 'hidden';
-	tempElement.style.width = cssString;
+	Object.assign(tempElement.style, { position: 'absolute', visibility: 'hidden', width: cssString });
 	contextElement.appendChild(tempElement);
 	const lengthInPixels = tempElement.offsetWidth;
-	contextElement.removeChild(tempElement);
+	tempElement.remove();
 	return lengthInPixels;
+}
+
+// parses a trusted HTML fragment string (generated internally by the plugin at export time,
+// e.g. icon SVGs) into real DOM nodes instead of assigning innerHTML directly.
+export function parseHTMLFragment(html: string): DocumentFragment {
+	const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+	const fragment = document.createDocumentFragment();
+	fragment.append(...Array.from(doc.body.childNodes));
+	return fragment;
 }
 
 //#endregion
@@ -279,20 +286,24 @@ export class Ticker
 export function slideUp(target: HTMLElement, duration: number = 500)
 {
 	if (target.style.display === 'none') return;
-	target.style.transitionProperty = 'height, margin, padding';
-	target.style.transitionTimingFunction = "ease-in-out";
-	target.style.transitionDuration = duration + 'ms';
-	target.style.boxSizing = 'border-box';
-	target.style.height = target.offsetHeight + 'px';
+	Object.assign(target.style, {
+		transitionProperty: 'height, margin, padding',
+		transitionTimingFunction: 'ease-in-out',
+		transitionDuration: duration + 'ms',
+		boxSizing: 'border-box',
+		height: target.offsetHeight + 'px',
+	});
 	target.offsetHeight; // force reflow
-	target.style.overflow = 'hidden';
-	target.style.height = "0";
-	target.style.paddingTop = "0";
-	target.style.paddingBottom = "0";
-	target.style.marginTop = "0";
-	target.style.marginBottom = "0";
+	Object.assign(target.style, {
+		overflow: 'hidden',
+		height: '0',
+		paddingTop: '0',
+		paddingBottom: '0',
+		marginTop: '0',
+		marginBottom: '0',
+	});
 	window.setTimeout(async () => {
-			target.style.display = 'none';
+			Object.assign(target.style, { display: 'none' });
 			target.style.removeProperty('height');
 			target.style.removeProperty('padding-top');
 			target.style.removeProperty('padding-bottom');
@@ -308,24 +319,28 @@ export function slideUpAll(targets: HTMLElement[], duration: number = 500)
 {
 	targets.forEach(async target => {
 		if (!target) return;
-		target.style.transitionProperty = 'height, margin, padding';
-		target.style.transitionTimingFunction = "ease-in-out";
-		target.style.transitionDuration = duration + 'ms';
-		target.style.boxSizing = 'border-box';
-		target.style.height = target.offsetHeight + 'px';
+		Object.assign(target.style, {
+			transitionProperty: 'height, margin, padding',
+			transitionTimingFunction: 'ease-in-out',
+			transitionDuration: duration + 'ms',
+			boxSizing: 'border-box',
+			height: target.offsetHeight + 'px',
+		});
 		target.offsetHeight; // force reflow
-		target.style.overflow = 'hidden';
-		target.style.height = "0;"
-		target.style.paddingTop = "0";
-		target.style.paddingBottom = "0";
-		target.style.marginTop = "0";
-		target.style.marginBottom = "0";
+		Object.assign(target.style, {
+			overflow: 'hidden',
+			height: '0',
+			paddingTop: '0',
+			paddingBottom: '0',
+			marginTop: '0',
+			marginBottom: '0',
+		});
 	});
 
 	window.setTimeout(async () => {
 		targets.forEach(async target => {
 			if (!target) return;
-			target.style.display = 'none';
+			Object.assign(target.style, { display: 'none' });
 			target.style.removeProperty('height');
 			target.style.removeProperty('padding-top');
 			target.style.removeProperty('padding-bottom');
@@ -344,20 +359,24 @@ export function slideDown(target: HTMLElement, duration: number = 500)
 	target.style.removeProperty('display');
 	let display = window.getComputedStyle(target).display;
 	if (display === 'none') display = 'block';
-	target.style.display = display;
+	Object.assign(target.style, { display });
 	const height = target.offsetHeight;
-	target.style.overflow = 'hidden';
-	target.style.height = "0";
-	target.style.paddingTop = "0";
-	target.style.paddingBottom = "0";
-	target.style.marginTop = "0";
-	target.style.marginBottom = "0";
+	Object.assign(target.style, {
+		overflow: 'hidden',
+		height: '0',
+		paddingTop: '0',
+		paddingBottom: '0',
+		marginTop: '0',
+		marginBottom: '0',
+	});
 	target.offsetHeight;
-	target.style.boxSizing = 'border-box';
-	target.style.transitionProperty = "height, margin, padding";
-	target.style.transitionTimingFunction = "ease-in-out";
-	target.style.transitionDuration = duration + 'ms';
-	target.style.height = height + 'px';
+	Object.assign(target.style, {
+		boxSizing: 'border-box',
+		transitionProperty: 'height, margin, padding',
+		transitionTimingFunction: 'ease-in-out',
+		transitionDuration: duration + 'ms',
+		height: height + 'px',
+	});
 	target.style.removeProperty('padding-top');
 	target.style.removeProperty('padding-bottom');
 	target.style.removeProperty('margin-top');
@@ -377,20 +396,24 @@ export function slideDownAll(targets: HTMLElement[], duration: number = 500)
 		target.style.removeProperty('display');
 		let display = window.getComputedStyle(target).display;
 		if (display === 'none') display = 'block';
-		target.style.display = display;
+		Object.assign(target.style, { display });
 		const height = target.offsetHeight;
-		target.style.overflow = 'hidden';
-		target.style.height = "0";
-		target.style.paddingTop = "0";
-		target.style.paddingBottom = "0";
-		target.style.marginTop = "0";
-		target.style.marginBottom = "0";
+		Object.assign(target.style, {
+			overflow: 'hidden',
+			height: '0',
+			paddingTop: '0',
+			paddingBottom: '0',
+			marginTop: '0',
+			marginBottom: '0',
+		});
 		target.offsetHeight;
-		target.style.boxSizing = 'border-box';
-		target.style.transitionProperty = "height, margin, padding";
-		target.style.transitionTimingFunction = "ease-in-out";
-		target.style.transitionDuration = duration + 'ms';
-		target.style.height = height + 'px';
+		Object.assign(target.style, {
+			boxSizing: 'border-box',
+			transitionProperty: 'height, margin, padding',
+			transitionTimingFunction: 'ease-in-out',
+			transitionDuration: duration + 'ms',
+			height: height + 'px',
+		});
 		target.style.removeProperty('padding-top');
 		target.style.removeProperty('padding-bottom');
 		target.style.removeProperty('margin-top');

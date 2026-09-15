@@ -36,7 +36,7 @@ export class Theme
 		if (instant) 
 		{	
 			oldTransition = document.body.style.transition;
-			document.body.style.transition = "none";
+			Object.assign(document.body.style, { transition: "none" });
 		}
 
 		if(!this.themeToggle.classList.contains("is-checked") && state)

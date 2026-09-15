@@ -44,7 +44,7 @@ export class HTMLExporter
 
 		if (!website) return;
 		if (Settings.openAfterExport) Utils.openPath(exportPath);
-		new Notice("✅ Finished HTML Export:\n\n" + exportPath, 5000);
+		new Notice("✅ Finished Rich Export:\n\n" + exportPath, 5000);
 	}
 
 	public static async exportFiles(files: TFile[], destination: Path, saveFiles: boolean, deleteOld: boolean) : Promise<Website | undefined>

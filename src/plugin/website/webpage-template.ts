@@ -28,18 +28,18 @@ export class WebpageTemplate
 		const collapseSidebarIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon sidebar-toggle-button-icon"><rect x="1" y="2" width="22" height="20" rx="4"></rect><rect x="4" y="5" width="2" height="14" rx="2" fill="currentColor" class="sidebar-toggle-icon-inner"></rect></svg>`;
 		
 		const head = this.doc.head;
-		head.innerHTML = `<meta charset="UTF-8">` + head.innerHTML;
-		head.innerHTML += `<meta property="og:site_name" content="${this.options.siteName}">`;
-		head.innerHTML += `<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=1.0, maximum-scale=5.0">`;
+		head.prepend(Utils.parseHTMLFragment(`<meta charset="UTF-8">`));
+		head.appendChild(Utils.parseHTMLFragment(`<meta property="og:site_name" content="${this.options.siteName}">`));
+		head.appendChild(Utils.parseHTMLFragment(`<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=1.0, maximum-scale=5.0">`));
 
 		if (!this.options.combineAsSingleFile)
 		{
 			if (this.options.rssOptions.enabled)
 			{
-				head.innerHTML += `<link rel="alternate" type="application/rss+xml" title="RSS Feed" href="${this.rssURL}">`;
+				head.appendChild(Utils.parseHTMLFragment(`<link rel="alternate" type="application/rss+xml" title="RSS Feed" href="${this.rssURL}">`));
 			}
 
-			head.innerHTML += AssetHandler.getHeadReferences(this.options);
+			head.appendChild(Utils.parseHTMLFragment(AssetHandler.getHeadReferences(this.options)));
 		}
 
 		const body = this.doc.body;
@@ -55,7 +55,7 @@ export class WebpageTemplate
 					const leftTopbar = leftSidebar.createDiv({attr: {class: "sidebar-topbar"}});
 						const leftTopbarContent = leftTopbar.createDiv({attr: {class: "topbar-content"}});
 						const leftCollapseIcon = leftTopbar.createDiv({attr: {class: "clickable-icon sidebar-collapse-icon"}});
-							leftCollapseIcon.innerHTML = collapseSidebarIcon;
+							leftCollapseIcon.appendChild(Utils.parseHTMLFragment(collapseSidebarIcon));
 					const leftSidebarContentWrapper = leftSidebar.createDiv({attr: {class: "sidebar-content-wrapper"}});
 						const leftSidebarContent = leftSidebarContentWrapper.createDiv({attr: {id: "left-sidebar-content", class: "leaf-content"}});
 			const centerContent = mainHorizontal.createDiv({attr: {id: "center-content", class: "leaf"}});
@@ -65,19 +65,19 @@ export class WebpageTemplate
 					const rightTopbar = rightSidebar.createDiv({attr: {class: "sidebar-topbar"}});
 						const rightTopbarContent = rightTopbar.createDiv({attr: {class: "topbar-content"}});
 						const rightCollapseIcon = rightTopbar.createDiv({attr: {class: "clickable-icon sidebar-collapse-icon"}});
-							rightCollapseIcon.innerHTML = collapseSidebarIcon;
+							rightCollapseIcon.appendChild(Utils.parseHTMLFragment(collapseSidebarIcon));
 					const rightSidebarContentWrapper = rightSidebar.createDiv({attr: {class: "sidebar-content-wrapper"}});
 						const rightSidebarContent = rightSidebarContentWrapper.createDiv({attr: {id: "right-sidebar-content", class: "leaf-content"}});
 
-		leftContent.style.setProperty("--sidebar-width", "var(--sidebar-width-left)");
-		rightContent.style.setProperty("--sidebar-width", "var(--sidebar-width-right)");
+		leftContent.setCssProps({ "--sidebar-width": "var(--sidebar-width-left)" });
+		rightContent.setCssProps({ "--sidebar-width": "var(--sidebar-width-right)" });
 
 		let leftSidebarScript = leftSidebar.createEl("script");
 		let rightSidebarScript = rightSidebar.createEl("script");
 		leftSidebarScript.setAttribute("defer", "");
 		rightSidebarScript.setAttribute("defer", "");
-		leftSidebarScript.innerHTML = `let ls = document.querySelector("#left-sidebar"); ls.classList.toggle("is-collapsed", window.innerWidth < 768); ls.style.setProperty("--sidebar-width", localStorage.getItem("sidebar-left-width"));`;
-		rightSidebarScript.innerHTML = `let rs = document.querySelector("#right-sidebar"); rs.classList.toggle("is-collapsed", window.innerWidth < 768); rs.style.setProperty("--sidebar-width", localStorage.getItem("sidebar-right-width"));`;
+		leftSidebarScript.textContent = `let ls = document.querySelector("#left-sidebar"); ls.classList.toggle("is-collapsed", window.innerWidth < 768); ls.style.setProperty("--sidebar-width", localStorage.getItem("sidebar-left-width"));`;
+		rightSidebarScript.textContent = `let rs = document.querySelector("#right-sidebar"); rs.classList.toggle("is-collapsed", window.innerWidth < 768); rs.style.setProperty("--sidebar-width", localStorage.getItem("sidebar-right-width"));`;
 
 		// delete sidebars if they are not needed
 		if (!this.options.sidebarOptions.enabled)
@@ -120,8 +120,8 @@ export class WebpageTemplate
 	{
 		let div = this.doc.createElement("div");
 		div.classList.add("parsed-feature-container");
-		div.style.display = "contents";
-		div.innerHTML = feature;
+		div.setCssStyles({ display: "contents" });
+		div.appendChild(Utils.parseHTMLFragment(feature));
 		this.insertFeature(div as HTMLElement, featureOptions);
 	}
 

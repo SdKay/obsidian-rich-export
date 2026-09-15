@@ -533,7 +533,7 @@ export class ObsidianWebsite {
 		loading: boolean,
 		inside: HTMLElement = this.centerContentEl
 	) {
-		inside.style.transitionDuration = "";
+		Object.assign(inside.style, { transitionDuration: "" });
 		inside.classList.toggle("hide", loading);
 		this.loadingEl.classList.toggle("show", loading);
 		// this.graphView?.graphRenderer?.canvas.classList.toggle("hide", loading);

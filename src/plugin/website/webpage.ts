@@ -11,6 +11,7 @@ import { Settings } from "src/plugin/settings/settings";
 import { AssetHandler } from "src/plugin/asset-loaders/asset-handler";
 import { Shared } from "src/shared/shared";
 import { moment } from "obsidian";
+import { Utils } from "src/plugin/utils/utils";
 
 export class WebpageOutputData
 {
@@ -363,7 +364,7 @@ export class Webpage extends Attachment
 					}
 				}
 
-				element.innerHTML = "";
+				element.empty();
 				element.append(...nodes);
 			}
 
@@ -517,11 +518,13 @@ export class Webpage extends Attachment
 		// add math styles to the document. They are here and not in <head> because they are unique to each document
 		if (this.exportOptions.addMathjaxStyles && this.type != DocumentType.Attachment)
 		{
-			const mathStyleEl = document.createElement("style");
-			mathStyleEl.id = "MJX-CHTML-styles";
+			// injected into the exported document (this.pageDocument / this.viewElement), not
+			// Obsidian's own UI — the exported static page has no styles.css to load at runtime,
+			// so an inline <style> element is the only option here.
 			await AssetHandler.mathjaxStyles.load();
-			mathStyleEl.innerHTML = AssetHandler.mathjaxStyles.data as string;
-			this.viewElement?.prepend(mathStyleEl);
+			const mathCss = (AssetHandler.mathjaxStyles.data as string).replace(/<\/style>/gi, "");
+			const mathStyleFragment = Utils.parseHTMLFragment(`<style id="MJX-CHTML-styles">${mathCss}</style>`);
+			this.viewElement?.prepend(mathStyleFragment);
 		}
 
 		// inject outline
@@ -547,7 +550,7 @@ export class Webpage extends Attachment
 			{
 				fileElement?.classList.remove("is-collapsed");
 				const children = fileElement?.querySelector(".tree-item-children") as HTMLElement;
-				if(children) children.style.display = "block";
+				if(children) children.setCssStyles({ display: "block" });
 				fileElement = fileElement?.parentElement?.closest(".tree-item") as HTMLElement;
 			}
 		}
@@ -569,7 +572,11 @@ export class Webpage extends Attachment
 
 	public async renderDocument(): Promise<Webpage | undefined>
 	{
-		this.pageDocument.documentElement.innerHTML = this.website.webpageTemplate.getDocElementInner();
+		// getDocElementInner() returns a full `<head>...</head><body>...</body>` markup string,
+		// so it needs a full-document parse rather than the fragment parser (which would treat
+		// content in a body context and silently drop the nested <head>).
+		const parsedDoc = new DOMParser().parseFromString(`<html>${this.website.webpageTemplate.getDocElementInner()}</html>`, "text/html");
+		this.pageDocument.documentElement.replaceChildren(...Array.from(parsedDoc.documentElement.childNodes));
 
 		// render the file
 		const centerContent = this.pageDocument.querySelector("#center-content") as HTMLElement;
@@ -595,7 +602,7 @@ export class Webpage extends Attachment
 			if (cssclasses && cssclasses.length > 0) contentEl.classList.add(...cssclasses);
 		}
 
-		if(this.sizerElement) this.sizerElement.style.paddingBottom = "";
+		if(this.sizerElement) this.sizerElement.setCssStyles({ paddingBottom: "" });
 
 		return this;
 	}
@@ -733,24 +740,30 @@ export class Webpage extends Attachment
 		let rootPath = this.pathToRoot.slugified(this.exportOptions.slugifyPaths).path;
 		if (rootPath == "") rootPath = ".";
 		const description = this.description || (this.exportOptions.siteName + " - " + this.title);
-		let head =
-`
-<title>${this.title}</title>
-<base href="${rootPath}">
-<meta name="pathname" content="${this.targetPath}">
-<meta name="description" content="${description}">
-<meta property="og:title" content="${this.title}">
-<meta property="og:description" content="${description}">
-<meta property="og:type" content="website">
-<meta property="og:url" content="${this.fullURL}">
-<meta property="og:image" content="${this.coverImageURL}">
-`;
-		if (this.author && this.author != "")
-		{
-			head += `<meta name="author" content="${this.author}">`;
-		} 
 
-		this.pageDocument.head.innerHTML = head + this.pageDocument.head.innerHTML;
+		const head = this.pageDocument.createDocumentFragment();
+		head.appendChild(this.pageDocument.createElement("title")).textContent = this.title;
+		const base = head.appendChild(this.pageDocument.createElement("base"));
+		base.setAttribute("href", rootPath);
+		const metas: [string, string, string][] = [
+			["name", "pathname", this.targetPath.path],
+			["name", "description", description],
+			["property", "og:title", this.title],
+			["property", "og:description", description],
+			["property", "og:type", "website"],
+			["property", "og:url", this.fullURL],
+			["property", "og:image", this.coverImageURL ?? ""],
+		];
+		if (this.author && this.author != "") metas.push(["name", "author", this.author]);
+		for (const [attrName, attrValue, content] of metas)
+		{
+			const meta = this.pageDocument.createElement("meta");
+			meta.setAttribute(attrName, attrValue);
+			meta.setAttribute("content", content);
+			head.appendChild(meta);
+		}
+
+		this.pageDocument.head.prepend(head);
 	}
 
 	private async inlineMedia()

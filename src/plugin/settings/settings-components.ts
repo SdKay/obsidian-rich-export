@@ -8,11 +8,7 @@ import { i18n } from "../translations/language";
 
 export function createDivider(container: HTMLElement)
 {
-	const hr = container.createEl("hr");
-	hr.style.marginTop = "20px";
-	hr.style.marginBottom = "20px";
-	hr.style.borderColor = "var(--interactive-accent)";
-	hr.style.opacity = "0.5";
+	container.createEl("hr", { cls: "webpage-html-export-divider" });
 }
 
 export function createToggle(container: HTMLElement, name: string, get: () => boolean, set: (value: boolean) => void, desc: string = ""): Setting
@@ -83,9 +79,7 @@ export function createDropdown(container: HTMLElement, name: string, get: () => 
 
 export function createError(container: HTMLElement): HTMLElement
 {
-	const error = container.createDiv({ cls: 'setting-item-description' });
-	error.style.color = "var(--color-red)";
-	error.style.marginBottom = "0.75rem";
+	const error = container.createDiv({ cls: 'setting-item-description webpage-html-export-error-text' });
 	return error;
 }
 
@@ -116,14 +110,14 @@ options?: {name?: string, description?: string, placeholder?: string, defaultPat
 	const fileInput = new Setting(container);
 	if(name != "") fileInput.setName(name);
 	if (description != "") fileInput.setDesc(description);
-	if (name == "" && description == "") fileInput.infoEl.style.display = "none";
+	if (name == "" && description == "") fileInput.infoEl.addClass("webpage-html-export-hidden");
 
 	let textEl: TextComponent;
-	fileInput.addText((text) => 
+	fileInput.addText((text) =>
 	{
 		textEl = text;
 		textInput = text;
-		text.inputEl.style.width = '100%';
+		text.inputEl.addClass("webpage-html-export-full-width");
 		text.setPlaceholder(placeholder)
 			.setValue(getSafe().path)
 			.onChange(async (value) => 
@@ -366,9 +360,7 @@ export function createFeatureSetting(container: HTMLElement, name: string, featu
 		if (feature.hideSettingsButton)
 		{
 			// Make the button invisible and non-interactive but still take up space
-			button.extraSettingsEl.style.opacity = "0";
-			button.extraSettingsEl.style.pointerEvents = "none";
-			button.extraSettingsEl.style.cursor = "default";
+			button.extraSettingsEl.addClass("webpage-html-export-invisible-button");
 		}
 		else
 		{

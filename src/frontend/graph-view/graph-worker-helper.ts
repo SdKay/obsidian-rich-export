@@ -191,7 +191,7 @@ export class GraphRenderWorker
 	{
 		const testEl = document.createElement('div');
 		document.body.appendChild(testEl);
-		testEl.style.setProperty('display', 'none');
+		Object.assign(testEl.style, { display: 'none' });
 		testEl.style.setProperty('color', 'var(' + variable + ')');
 
 		const col = getComputedStyle(testEl).color;

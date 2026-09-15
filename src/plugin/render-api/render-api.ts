@@ -323,7 +323,7 @@ export namespace _MarkdownRendererInternal {
 			// unfold callouts
 			const folded = Array.from(section.el.querySelectorAll(".callout-content[style*='display: none']")) as HTMLElement[];
 			for (const callout of folded) {
-				callout.style.display = "";
+				callout.setCssStyles({ display: "" });
 			}
 			foldedCallouts.push(...folded);
 
@@ -351,8 +351,7 @@ export namespace _MarkdownRendererInternal {
 
 				const image = document.body.createEl("img");
 				image.src = data;
-				image.style.width = canvas.style.width || "100%";
-				image.style.maxWidth = "100%";
+				image.setCssStyles({ width: canvas.style.width || "100%", maxWidth: "100%" });
 				canvas.replaceWith(image);
 			};
 
@@ -369,7 +368,7 @@ export namespace _MarkdownRendererInternal {
 
 		// refold callouts
 		for (const callout of foldedCallouts) {
-			callout.style.display = "none";
+			callout.setCssStyles({ display: "none" });
 		}
 
 		newSizerEl.empty();
@@ -392,7 +391,12 @@ export namespace _MarkdownRendererInternal {
 
 		// if we aren't keeping the view element then only keep the content of the sizer element
 		if (options.createDocumentContainer === false) {
-			newMarkdownEl.outerHTML = newSizerEl.innerHTML;
+			// leaves newMarkdownEl (and its original children, incl. newSizerEl) intact and
+			// detached, while inserting a clone of the sizer's content in its place in the DOM —
+			// equivalent to the previous `newMarkdownEl.outerHTML = newSizerEl.innerHTML` string
+			// round-trip, without serializing/reparsing HTML.
+			const sizerContentClones = Array.from(newSizerEl.childNodes).map(n => n.cloneNode(true));
+			newMarkdownEl.replaceWith(...sizerContentClones);
 		}
 
 		options.container?.appendChild(newMarkdownEl);
@@ -511,7 +515,7 @@ export namespace _MarkdownRendererInternal {
 				)
 			) as HTMLElement[];
 			for (const callout of folded) {
-				callout.style.display = "";
+				callout.setCssStyles({ display: "" });
 			}
 			foldedCallouts.push(...folded);
 		}
@@ -641,14 +645,13 @@ export namespace _MarkdownRendererInternal {
 
 			const image = batchDocument.body.createEl("img");
 			image.src = data;
-			image.style.width = canvas.style.width || "100%";
-			image.style.maxWidth = "100%";
+			image.setCssStyles({ width: canvas.style.width || "100%", maxWidth: "100%" });
 			canvas.replaceWith(image);
 		}
 
 		// refold callouts
 		for (const callout of foldedCallouts) {
-			callout.style.display = "none";
+			callout.setCssStyles({ display: "none" });
 		}
 
 		newSizerEl.empty();
@@ -663,7 +666,7 @@ export namespace _MarkdownRendererInternal {
 			});
 		}
 
-		newSizerEl.innerHTML = sizerEl.innerHTML;
+		newSizerEl.append(...Array.from(sizerEl.childNodes).map(n => n.cloneNode(true)));
 
 		// get banner plugin banner and insert it before the sizer element
 		const banner = preview.containerEl.querySelector(
@@ -674,7 +677,10 @@ export namespace _MarkdownRendererInternal {
 		}
 		// if we aren't keeping the view element then only keep the content of the sizer element
 		if (options.createDocumentContainer === false) {
-			newMarkdownEl.outerHTML = newSizerEl.innerHTML;
+			// see the comment on the equivalent block in renderMarkdownViewFallback for why this
+			// clone-and-replace avoids the previous innerHTML/outerHTML string round-trip.
+			const sizerContentClones = Array.from(newSizerEl.childNodes).map(n => n.cloneNode(true));
+			newMarkdownEl.replaceWith(...sizerContentClones);
 		}
 
 		options.container?.appendChild(newMarkdownEl);
@@ -711,7 +717,8 @@ export namespace _MarkdownRendererInternal {
 
 		const renderedEl = container.children[container.children.length - 1];
 		if (renderedEl && renderedEl.tagName == "P") {
-			renderedEl.outerHTML = renderedEl.innerHTML; // remove the outer <p> tag
+			// remove the outer <p> tag, keeping its children in place
+			renderedEl.replaceWith(...Array.from(renderedEl.childNodes));
 		}
 
 		// remove tags
@@ -723,20 +730,22 @@ export namespace _MarkdownRendererInternal {
 		container.querySelectorAll("ol").forEach((listEl: HTMLElement) => {
 			if (listEl.parentElement) {
 				const start = listEl.getAttribute("start") ?? "1";
-				listEl.parentElement.createSpan().outerHTML = `${start}. ${listEl.innerText}`;
-				listEl.remove();
+				const span = listEl.parentElement.createSpan({ text: `${start}. ${listEl.innerText}` });
+				listEl.replaceWith(span);
 			}
 		});
 		container.querySelectorAll("ul").forEach((listEl: HTMLElement) => {
 			if (listEl.parentElement) {
-				listEl.parentElement.createSpan().innerHTML = "- " + listEl.innerHTML;
-				listEl.remove();
+				const span = listEl.parentElement.createSpan({ text: "- " });
+				span.append(...Array.from(listEl.childNodes));
+				listEl.replaceWith(span);
 			}
 		});
 		container.querySelectorAll("li").forEach((listEl: HTMLElement) => {
 			if (listEl.parentElement) {
-				listEl.parentElement.createSpan().innerHTML = listEl.innerHTML;
-				listEl.remove();
+				const span = listEl.parentElement.createSpan();
+				span.append(...Array.from(listEl.childNodes));
+				listEl.replaceWith(span);
 			}
 		});
 	}
@@ -926,14 +935,18 @@ export namespace _MarkdownRendererInternal {
 			if ((icon != "" && !isDefaultIcon)) {
 				pageIcon = documentRoot.createEl("div");
 				pageIcon.id = "webpage-icon";
-				pageIcon.innerHTML = icon;
+				pageIcon.appendChild(Utils.parseHTMLFragment(icon));
 			}
 
 			// Insert title into the title element
 			await _MarkdownRendererInternal.renderSimpleMarkdown(title, titleEl);
 
-			// remove new lines
-			titleEl.innerHTML = titleEl.innerHTML.replace(/\n/g, "");
+			// remove new lines from any text nodes in the title
+			const titleTextWalker = document.createTreeWalker(titleEl, NodeFilter.SHOW_TEXT, null);
+			let titleTextNode: Node | null;
+			while (titleTextNode = titleTextWalker.nextNode()) {
+				titleTextNode.textContent = titleTextNode.textContent?.replace(/\n/g, "") ?? "";
+			}
 
 			if (pageIcon) {
 				titleEl.prepend(pageIcon);
@@ -993,7 +1006,7 @@ export namespace _MarkdownRendererInternal {
 			optionsCopy.unifyTitleFormat = (nodeFile && nodeFile != view.file) ?? false;
 
 			if (nodeFile && embedEl && childPreview) {
-				embedEl.innerHTML = "";
+				embedEl.empty();
 
 				if ((options.inlineHTML || !allExportedPaths.contains(nodeFile.path)) && childPreview) {
 					console.log("Inlining child preview", nodeFile.path);
@@ -1016,8 +1029,7 @@ export namespace _MarkdownRendererInternal {
 				const iframe = node.contentEl?.createEl("iframe");
 				if (iframe) {
 					iframe.src = node.url;
-					iframe.classList.add("canvas-link");
-					iframe.setAttribute("style", "border:none; width:100%; height:100%;");
+					iframe.classList.add("canvas-link", "webpage-html-export-canvas-link-iframe");
 					iframe.setAttribute("title", "Canvas card with embedded webpage: " + node.url);
 				}
 			}
@@ -1108,16 +1120,13 @@ export namespace _MarkdownRendererInternal {
 		// transclusions put a div inside a p tag, which is invalid html. Fix it here
 		html.querySelectorAll("p:has(> .inline-embed.markdown-embed)").forEach((element) => {
 			const elParent = element.parentElement as HTMLElement;
-			const span = batchDocument.body.createEl("span");
-			span.style.display = "block";
-			span.style.marginBlockStart = "var(--p-spacing)";
-			span.style.marginBlockEnd = "var(--p-spacing)";
+			const span = batchDocument.body.createEl("span", { cls: "webpage-html-export-transclusion-fix-span" });
 
-			span.innerHTML = element.innerHTML;
+			span.append(...Array.from(element.childNodes));
 			element.remove();
-			let embed = span.querySelector(".inline-embed.markdown-embed") as HTMLElement;
-			embed.innerHTML = elParent.innerHTML;
-			elParent.innerHTML = "";
+			const embed = span.querySelector(".inline-embed.markdown-embed") as HTMLElement;
+			embed.append(...Array.from(elParent.childNodes));
+			elParent.empty();
 			elParent.appendChild(span);
 		});
 
@@ -1148,8 +1157,7 @@ export namespace _MarkdownRendererInternal {
 			const width = element.getAttribute("width");
 			if (width) {
 				element.removeAttribute("width");
-				element.style.width = (width.trim() != "") ? (width + "px") : "";
-				element.style.maxWidth = "100%";
+				element.setCssStyles({ width: (width.trim() != "") ? (width + "px") : "", maxWidth: "100%" });
 			}
 		});
 
@@ -1157,9 +1165,11 @@ export namespace _MarkdownRendererInternal {
 		html.querySelectorAll("span.internal-embed.pdf-embed").forEach((pdf: HTMLElement) => {
 			const embed = batchDocument.body.createEl("embed");
 			embed.setAttribute("src", pdf.getAttribute("src") ?? "");
-			embed.style.width = pdf.style.width || '100%';
-			embed.style.maxWidth = "100%";
-			embed.style.height = pdf.style.height || '800px';
+			embed.setCssStyles({
+				width: pdf.style.width || '100%',
+				maxWidth: "100%",
+				height: pdf.style.height || '800px',
+			});
 
 			const container = pdf.parentElement?.parentElement;
 
@@ -1195,7 +1205,7 @@ export namespace _MarkdownRendererInternal {
 			let collapseIcon = item.querySelector(".collapse-icon");
 			if (!collapseIcon) {
 				collapseIcon = item.createDiv({ cls: "list-collapse-indicator collapse-indicator collapse-icon" });
-				collapseIcon.innerHTML = this.arrowHTML;
+				collapseIcon.appendChild(Utils.parseHTMLFragment(this.arrowHTML));
 				item.prepend(collapseIcon);
 			}
 		}
@@ -1298,50 +1308,31 @@ export namespace _MarkdownRendererInternal {
 	}
 
 	function generateLogEl(title: string, message: any, textColor: string, backgroundColor: string): HTMLElement {
-		const logEl = batchDocument.body.createEl("div");
-		logEl.className = "html-progress-log-item";
-		logEl.style.display = "flex";
-		logEl.style.flexDirection = "column";
-		logEl.style.marginBottom = "2px";
-		logEl.style.fontSize = "12px";
-		logEl.innerHTML =
-			`
-		<div class="html-progress-log-title" style="font-weight: bold; margin-left: 1em;"></div>
-		<div class="html-progress-log-message" style="margin-left: 2em; font-size: 0.8em;white-space: pre-wrap;"></div>
-		`;
-		logEl.querySelector(".html-progress-log-title")!.textContent = title;
-		logEl.querySelector(".html-progress-log-message")!.textContent = message.toString();
+		const logEl = batchDocument.body.createEl("div", { cls: "html-progress-log-item" });
+		logEl.createDiv({ cls: "html-progress-log-title", text: title });
+		logEl.createDiv({ cls: "html-progress-log-message", text: message.toString() });
 
-		logEl.style.color = textColor;
-		logEl.style.backgroundColor = backgroundColor;
-		logEl.style.borderLeft = `5px solid ${textColor}`;
-		logEl.style.borderBottom = "1px solid var(--divider-color)";
-		logEl.style.borderTop = "1px solid var(--divider-color)";
+		logEl.setCssStyles({
+			color: textColor,
+			backgroundColor: backgroundColor,
+			borderLeft: `5px solid ${textColor}`,
+		});
 
 		return logEl;
 	}
 
 	function createLoadingContainer() {
 		if (!loadingContainer) {
-			loadingContainer = batchDocument.body.createDiv();
-			loadingContainer.outerHTML =
-				`
-			<div class="html-progress-wrapper">
-				<div class="html-progress-content">
-					<div class="html-progress-inner">
-						<h1>Generating HTML</h1>
-						<progress class="html-progress-bar" value="0" min="0" max="1"></progress>
-						<span class="html-progress-sub"></span>
-						<button class="html-progress-cancel">Cancel</button>
-					</div>
-					<div class="html-progress-log">
-						<h1>Export Log</h1>
-					</div>
-				</div>
-			</div>
-			`
-			loadingContainer = batchDocument.querySelector(".html-progress-wrapper") as HTMLElement;
-			let cancelButton = loadingContainer.querySelector(".html-progress-cancel") as HTMLButtonElement;
+			loadingContainer = batchDocument.body.createDiv({ cls: "html-progress-wrapper" });
+			const content = loadingContainer.createDiv({ cls: "html-progress-content" });
+			const inner = content.createDiv({ cls: "html-progress-inner" });
+			inner.createEl("h1", { text: "Generating HTML" });
+			inner.createEl("progress", { cls: "html-progress-bar", attr: { value: "0", min: "0", max: "1" } });
+			inner.createEl("span", { cls: "html-progress-sub" });
+			const cancelButton = inner.createEl("button", { cls: "html-progress-cancel", text: "Cancel" });
+			const log = content.createDiv({ cls: "html-progress-log" });
+			log.createEl("h1", { text: "Export Log" });
+
 			cancelButton.onclick = () => cancelExport();
 
 			// @ts-ignore
@@ -1360,7 +1351,7 @@ export namespace _MarkdownRendererInternal {
 
 		if (!logShowing) {
 			renderLeaf.view.containerEl.win.resizeTo(1000, 500);
-			logContainer.style.display = "flex";
+			logContainer.addClass("html-progress-log-visible");
 			logShowing = true;
 		}
 
@@ -1382,8 +1373,7 @@ export namespace _MarkdownRendererInternal {
 		const progressBar = loadingContainer.querySelector("progress");
 		if (progressBar) {
 			progressBar.value = fraction;
-			progressBar.style.backgroundColor = "transparent";
-			progressBar.style.color = progressColor;
+			progressBar.setCssStyles({ backgroundColor: "transparent", color: progressColor });
 		}
 
 

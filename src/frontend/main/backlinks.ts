@@ -1,6 +1,7 @@
 import { WebpageData } from "src/shared/website-data";
 import { DynamicInsertedFeature } from "src/shared/dynamic-inserted-feature";
 import { BacklinksOptions } from "src/shared/features/backlinks";
+import { parseHTMLFragment } from "src/frontend/main/utils";
 
 export class Backlink {
 	public backlinkEl: HTMLAnchorElement;
@@ -29,7 +30,7 @@ export class Backlink {
 
 		this.backlinkIconEl = document.createElement("div");
 		this.backlinkIconEl.classList.add("backlink-icon");
-		this.backlinkIconEl.innerHTML = this.targetData.icon;
+		this.backlinkIconEl.appendChild(parseHTMLFragment(this.targetData.icon));
 		this.backlinkEl.appendChild(this.backlinkIconEl);
 
 		this.backlinkTitleEl = document.createElement("div");

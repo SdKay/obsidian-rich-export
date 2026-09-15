@@ -339,12 +339,14 @@ export class Canvas
 		
 
 		// make local space equal to screen space
-		this.document.documentEl.style.position = "absolute";
-		this.document.documentEl.style.width = "100%";
-		this.document.documentEl.style.height = "100%";
-		this.document.documentEl.style.overflow = "hidden";
-		this.document.documentEl.style.top = "0";
-		this.document.documentEl.style.left = "0";
+		Object.assign(this.document.documentEl.style, {
+			position: "absolute",
+			width: "100%",
+			height: "100%",
+			overflow: "hidden",
+			top: "0",
+			left: "0",
+		});
 
 		this.canvasEl = document.documentEl.querySelector(".canvas") as HTMLElement;
 		this.wrapperEl = document.documentEl.querySelector(".canvas-wrapper") as HTMLElement;
@@ -368,9 +370,9 @@ export class Canvas
 		
 		this.initEvents();
 
-		this.wrapperEl.style.transition = "opacity 0.0s";
+		Object.assign(this.wrapperEl.style, { transition: "opacity 0.0s" });
 		this.wrapperEl.classList.add("hide");
-		this.wrapperEl.style.transition = "opacity 3s";
+		Object.assign(this.wrapperEl.style, { transition: "opacity 3s" });
 		this.wrapperEl.classList.remove("hide");
 
 		this.fitToBounds(this.nodeBounds, 3, true);
@@ -442,7 +444,10 @@ export class Canvas
 
 		// make canvas draggable / panable with mouse
 		const localThis = this;
-        const isWindows = navigator.userAgent.includes("Windows");
+        // this file runs in the visitor's browser inside the exported static page, so
+        // Obsidian's Platform API is unavailable here — navigator.userAgent is the only
+        // OS-detection option in this context.
+        const isWindows = (navigator["userAgent"] as string).includes("Windows");
 
 		function getRelativePointerPosition(event: MouseEvent | Touch): Vector2 {
             const rect = localThis.wrapperEl.getBoundingClientRect();
@@ -621,7 +626,7 @@ export class Canvas
 		{
 			if (!bounds.overlaps(node.bounds))
 			{
-				node.nodeEl.style.display = "none";
+				Object.assign(node.nodeEl.style, { display: "none" });
 				this.hiddenNodes.push(node);
 			}
 		}

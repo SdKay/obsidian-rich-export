@@ -86,7 +86,7 @@ export class Sidebar
 		{
 			this.collapsed = false;
 			this.containerEl.style.setProperty('--sidebar-width', newWidth);
-			if (width > this.minResizeWidth) this.containerEl.style.transitionDuration = "0s";
+			if (width > this.minResizeWidth) Object.assign(this.containerEl.style, { transitionDuration: "0s" });
 		}
 
 		if(ObsidianSite.graphView) ObsidianSite.graphView.graphRenderer.autoResizeCanvas();

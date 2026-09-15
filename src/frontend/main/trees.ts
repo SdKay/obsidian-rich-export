@@ -1,6 +1,6 @@
 import { DynamicInsertedFeature } from "src/shared/dynamic-inserted-feature";
 import { LinkHandler } from "./links";
-import { slideDown, slideUp } from "./utils";
+import { slideDown, slideUp, parseHTMLFragment } from "./utils";
 
 export class TreeItem
 {
@@ -27,7 +27,7 @@ export class TreeItem
 	get title(): string { return this.innerEl.innerHTML; }
 	set title(title: string)
 	{
-		this.innerEl.innerHTML = title;
+		this.innerEl.replaceChildren(parseHTMLFragment(title));
 	}
 
 	public children: TreeItem[];
