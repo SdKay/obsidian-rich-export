@@ -11,6 +11,7 @@ import { AssetLoader } from "../asset-loaders/base-asset";
 import { AssetType } from "../asset-loaders/asset-types";
 import { IconHandler } from "../utils/icon-handler";
 import { AssetHandler } from "../asset-loaders/asset-handler";
+import { BlockExport } from "./block-export";
 
 export namespace MarkdownRendererAPI {
 	export const viewableMediaExtensions = ["png", "jpg", "jpeg", "svg", "gif", "bmp", "ico", "mp4", "mov", "avi", "webm", "mpeg", "mp3", "wav", "ogg", "aac", "pdf", "html", "htm", "json", "txt", "yaml"];
@@ -283,6 +284,7 @@ export namespace _MarkdownRendererInternal {
 		// @ts-ignore
 		const promises: Promise<any>[] = [];
 		const foldedCallouts: HTMLElement[] = [];
+		const fallbackBlockStyles = new Map<string, { text: string; variables: Record<string, string | null> }>();
 		for (const section of sections) {
 			section.shown = true;
 			section.rendered = false;
@@ -377,6 +379,9 @@ export namespace _MarkdownRendererInternal {
 		if (options.createPusherElement) {
 			newSizerEl.createDiv({ attr: { class: "markdown-pusher", style: "width: 1px; height: 0.1px; margin-bottom: 0px;" } });
 		}
+
+		await BlockExport.replaceInSections(sections.map(s => s.el), (preview as any).get?.() ?? "", preview.file?.path ?? "", undefined, fallbackBlockStyles);
+		newSizerEl.append(...BlockExport.buildStyleElements(newSizerEl.ownerDocument, fallbackBlockStyles));
 
 		// move all of them back in since rendering can cause some sections to move themselves out of their container
 		for (const section of sections) {
@@ -570,6 +575,10 @@ export namespace _MarkdownRendererInternal {
 			}
 		}
 
+		// let plugins that publish blockExport render their own fenced blocks
+		const blockStyles = new Map<string, { text: string; variables: Record<string, string | null> }>();
+		await BlockExport.replaceInSections(sections.map(s => s.el), (preview as any).get?.() ?? "", preview.file?.path ?? "", undefined, blockStyles);
+
 		// wait for transclusions
 		ExportLog.log("Waiting for transclusions to render...");
 		await waitUntil(
@@ -666,6 +675,7 @@ export namespace _MarkdownRendererInternal {
 			});
 		}
 
+		newSizerEl.append(...BlockExport.buildStyleElements(newSizerEl.ownerDocument, blockStyles));
 		newSizerEl.append(...Array.from(sizerEl.childNodes).map(n => n.cloneNode(true)));
 
 		// get banner plugin banner and insert it before the sizer element
